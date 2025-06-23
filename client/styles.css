@@ -1,0 +1,70 @@
+/* styles.css */
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #121212;
+  color: #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+h1 {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+  color: #f0f0f0;
+  text-align: center;
+}
+
+.video-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 1000px;
+  width: 100%;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.video-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48%;
+}
+
+.video-wrapper h1 {
+  margin-bottom: 0.75rem;
+  font-size: 1.4rem;
+}
+
+video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+  background: black;
+  object-fit: cover;
+  transition: box-shadow 0.3s ease;
+}
+
+video:hover {
+  box-shadow: 0 0 20px #4caf50;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 700px) {
+  .video-container {
+    flex-direction: column;
+  }
+  .video-wrapper {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+}
