@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style/styles.css" />
     <title>Document</title>
 </head>
 <body>
-    <h1>WEBRTC Application Demonstration</h1>
-    <input type="text" id="uName" placeholder="Enter UserName" />
-    <input type="text" id="roomId" placeholder="Enter Room ID" />
-    <button id="joinRoom">Join Room</button>
-    <script src="./index.js"></script>
+  <h1>WEBRTC Application Demonstration</h1>
+
+  <form class="login-form" onsubmit="handleJoin(event)">
+    <input type="text" id="uName" placeholder="Enter UserName" required />
+    <input type="text" id="roomId" placeholder="Enter Room ID" required />
+    <button id="joinRoom" type="submit">Join Room</button>
+  </form>
+
+  <script src="./js/index.js"></script>
 </body>
 </html>

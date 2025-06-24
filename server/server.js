@@ -1,8 +1,10 @@
 // server.js
 const http = require('http');
 const express = require('express');
-const app = express();
+const cors = require('cors');
 const { Server } = require('socket.io')
+
+const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -12,6 +14,8 @@ const io = new Server(server, {
   }
 });
 
+app.use(cors())
+const port = 8000;
 const rooms =[];
 // Rooms array example Object
 // [
@@ -32,7 +36,7 @@ const rooms =[];
 //         }
 //     }
 // ]
-const port = 8000;
+
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
@@ -49,8 +53,7 @@ io.on('connection', (socket) => {
             roomExists.peers.peer2 ={userName: userName, socketId: socket.id} 
         }
         else {
-            console.log(`Room ${roomId} is full. Cannot add user ${userName}.`);
-            return;
+            io.emit("room-full",socket.id)
         }
     }
     else if(!roomExists) {
@@ -62,6 +65,7 @@ io.on('connection', (socket) => {
             }
         });
     }
+    console.log(`Updated rooms: ${JSON.stringify(rooms)}`);
 
     socket.join(roomId);
     
@@ -77,9 +81,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('signal', (data) => {
-    // data = { roomId, signalData, from }
-    // Broadcast signaling data to the other client in the room
+    // if ever get error message related to signalling always ensure to check roomId here is valid or not
+    if (data.signalData.type) {
+      console.log(`Signal type: ${data.signalData.type} from socket ${socket.id}`);
+    }
 
+    // Broadcast signaling data to the other client in the room
     socket.to(data.roomId).emit('signal', {
       signalData: data.signalData,
       from: socket.id,
@@ -105,9 +112,16 @@ io.on('connection', (socket) => {
         rooms.splice(i, 1);
         i--; // adjust index after removal
         }
+        console.log(`Updated rooms: ${JSON.stringify(rooms)}`);
     }
     });
 
+});
+
+
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is online' });
 });
 
 server.listen(port, () => {
