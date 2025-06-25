@@ -1,10 +1,9 @@
 import { SocketManager } from "./SocketManager.js";
-import { UIManager } from "./UIManager.js";
 import { WebRTCConnection } from "./WebRTC.js";
 
 export class Controller {
-    constructor(uiElements, serverUrl , userInfo){
-        this.uiManager = new UIManager(uiElements);
+    constructor(uiManager, serverUrl , userInfo ,localStream){
+        this.uiManager = uiManager;
         this.socketManager = new SocketManager(serverUrl, {
             ready: this.onReadyCallback.bind(this),
             signal: this.onSignalCallback.bind(this),
@@ -12,7 +11,7 @@ export class Controller {
             roomFull: this.onRoomFullCallback.bind(this)
         });
         this.clientInfo = userInfo;
-        this.localStream = null;
+        this.localStream = localStream;
         this.uiManager.setLocalUserHeading(userInfo.userName);
         this.uiManager.setRoomIdHeading(userInfo.roomId);
 
@@ -36,14 +35,14 @@ export class Controller {
                 alert("Connect a Media Device and Try Again")
                 window.location.href = "index.html";
             }
-            console.error('Error in onReadyCallback:', error.name);
+            console.error('Error in onReadyCallback:', error);
         }
 
 
 
     }
 
-    async onRoomFullCallback(socketId){
+    async onRoomFullCallback(){
         alert(`Room #${this.clientInfo.roomId} is Full , Try some other room`);
         window.location.href = "index.html";
     }
@@ -74,11 +73,11 @@ export class Controller {
     async onPeerleftCallback(data) {
         if(this.peerConnection) {
         console.log('Peer disconnected' , data.socketId);
-        this.peerConnection.RTCcloseConnection(this.localStream);
+        this.peerConnection.RTCcloseConnection();
         }
         this.uiManager.clearRemoteVideoEl();
         this.uiManager.resetRemotePeerInfo(data.socketId);
-
+        //window.location.href = "index.html";
     }
 
     async onIceCandidateCallback(candidate){
@@ -90,8 +89,8 @@ export class Controller {
 
 
     async initWebRTC(){
+
         console.log("initWebRTC called")
-        this.localStream = await this.uiManager.getMediaStream();
         this.peerConnection = new WebRTCConnection(
             { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }, // config
             this.onIceCandidateCallback.bind(this),

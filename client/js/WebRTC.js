@@ -49,15 +49,16 @@ export class WebRTCConnection{
         }
     }
     
-    RTCcloseConnection(localStream) {
+    RTCcloseConnection() {
         if (this.peerConnection) {
             this.peerConnection.close();
             this.peerConnection = null;
         }
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
-        }
+        // clearing the localtracks will cause problem in reconnecting as media is captured and passed in controller constructor , hence not clearing the tracks doesnt pose the need to get media again , until completely resets
+        // if (localStream) {
+        //     localStream.getTracks().forEach(track => track.stop());
+        //     localStream = null;
+        // }
     }
 
     RTCaddTrack(localStream) {

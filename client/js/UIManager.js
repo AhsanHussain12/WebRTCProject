@@ -26,10 +26,42 @@ export class UIManager{
         this.roomIdHeading.textContent = roomId;
     }
 
-    async getMediaStream(){
-        const localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        this.localVideo.srcObject = localStream;
-        return localStream;
+    async getMediaStream(mode){
+
+    if (this.localVideo && this.localVideo.srcObject) {
+        const tracks = this.localVideo.srcObject.getTracks();
+        tracks.forEach(track => {  track.stop() });
+        this.localVideo.srcObject = null;
+    }
+        try {
+            let localStream;
+
+            switch(mode){
+                case 'video_audio':        
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                break;
+
+                case 'screen_share':
+                               console.warn("[ScreenShare] Requesting display media...");
+                localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                break;
+
+                case 'audio_only':
+                localStream = await navigator.mediaDevices.getUserMedia({  audio: true });
+                break;
+            }
+
+            if (this.localVideo && localStream) {
+                this.localVideo.srcObject = localStream;
+            }
+            return localStream;
+        } 
+        catch (error) {
+            console.error("Error accessing media:", error);
+            alert("Media access error: " + error.message);
+            return null;
+        }        
+        
     }
 
     playRemoteStream(remoteStream){

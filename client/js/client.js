@@ -1,12 +1,16 @@
 import { Controller } from './Controller.js';
+import { UIManager } from './UIManager.js';
 
-
+if (performance.getEntriesByType("navigation")[0].type === "reload") {
+  window.location.href = "index.html";
+}
 // Parse user info from the URL
 const serverUrl = "http://localhost:8000";
 const urlParams = new URLSearchParams(window.location.search);
-const userInfo = {
+const clientInfo = {
     userName: urlParams.get('userName'),
-    roomId: urlParams.get('roomId')
+    roomId: urlParams.get('roomId'),
+    mode : urlParams.get('mode')
 }
 const uiElements ={
     localVideo : document.getElementById('localVideo'),
@@ -15,11 +19,16 @@ const uiElements ={
     remoteUserNameHeading : document.getElementById('remoteUserName'),
     roomIdHeading : document.getElementById('roomId'),
 }
+const uiManager = new UIManager(uiElements);
 
 
-// Start the controller with everything it needs
-new Controller(
-  uiElements,
-  serverUrl,
-  userInfo
-);
+(async () => {
+    const localStream = await uiManager.getMediaStream(clientInfo.mode);
+
+    new Controller(
+        uiManager,
+        serverUrl,
+        clientInfo,
+        localStream
+    );
+})();

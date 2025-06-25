@@ -12,6 +12,12 @@
   <form class="login-form" onsubmit="handleJoin(event)">
     <input type="text" id="uName" placeholder="Enter UserName" required />
     <input type="text" id="roomId" placeholder="Enter Room ID" required />
+      <label for="modeSelect">Select Mode:</label>
+      <select id="modeSelect">
+        <option value="video_audio" selected>Video + Audio</option>
+        <option value="audio_only">Audio Only</option>
+        <option value="screen_share">Screen Sharing</option>
+      </select>
     <button id="joinRoom" type="submit">Join Room</button>
   </form>
 

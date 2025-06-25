@@ -53,7 +53,7 @@ io.on('connection', (socket) => {
             roomExists.peers.peer2 ={userName: userName, socketId: socket.id} 
         }
         else {
-            io.emit("room-full",socket.id)
+            socket.emit("room-full")
         }
     }
     else if(!roomExists) {
