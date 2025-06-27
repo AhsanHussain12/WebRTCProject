@@ -1,0 +1,43 @@
+async initWebRTC(isCaller) {
+    console.log("🛰️ initWebRTC called");
+
+    // 1. Create new peer connection with STUN server and callback bindings
+    this.peerConnection = new WebRTCConnection(
+        {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        },
+        this.onIceCandidateCallback.bind(this),
+        this.uiManager.playRemoteStream.bind(this.uiManager)
+    );
+
+    // 2. Add local media tracks to the connection
+    if (!this.localStream) {
+        console.warn("⚠️ localStream not found. Cannot add tracks.");
+        return;
+    }
+
+    this.peerConnection.RTCaddTrack(this.localStream);
+    console.log("✅ Local stream tracks added to peer connection");
+
+    
+
+    if (isCaller) {
+        try {
+            const offer = await this.peerConnection.RTCcreateOffer();
+            this.socketManager.emitP2PSignal({
+                socketId: this.p2pPeerId,   // remote peer's socketId
+                signalData: offer
+            });
+            console.log("📡 SDP offer created and sent to peer:", this.p2pPeerId);
+        } catch (err) {
+            console.error("❌ Failed to create/send offer:", err);
+        }
+    } else {
+        console.log("👂 Waiting for SDP offer from caller...");
+    }
+
+    if (remotePeer?.userName) {
+        this.uiManager.setRemotePeerHeading(remotePeer.userName);
+        console.log("🧑‍💻 Remote peer heading set to:", remotePeer.userName);
+    }
+}

@@ -18,30 +18,60 @@ export class SocketManager{
             console.error('Socket error:', error);
         });
 
-        this.onReady(handlers.ready);
-        this.onSignal(handlers.signal);
+
+        this.onP2PSignal(handlers.p2psignal);
         this.onPeerLeft(handlers.peerLeft);
         this.onRoomFull(handlers.roomFull);
-
+        this.onJoinServerACK(handlers.joinServerACK);
+        this.onJoinRoomACK(handlers.joinRoomACK);
+        this.onIncomingCall(handlers.incomingCall);
+        this.onCallResponse(handlers.callResponse);
 
     }
+
     
+    // emitters
+    joinServer(payload){
+        this.socket.emit('join-server', payload);
+    }
     joinRoom(payload) {
-        this.socket.emit('join', payload);
+        this.socket.emit('join-room', payload);
+    }
+    emitP2PSignal(payload) {
+        this.socket.emit('p2p-signal', payload);
+    } 
+    emitCallSignal(payload){
+        this.socket.emit('call-user', payload);
+    }
+    emitCallResponse(payload){
+        this.socket.emit('call-response', payload);
+    }
+
+
+
+    // listners/subscribers 
+    onJoinServerACK(callback){
+        this.socket.on('ack-join-server', callback);
+    }
+    onJoinRoomACK(callback){
+        this.socket.on('ack-join-room', callback);
     }
     onReady(callback) {
         this.socket.on('ready', callback);
     }
-    onSignal(callback) {
+    onP2PSignal(callback) {
         console.log('onSignal called',callback);
         this.socket.on('signal', callback);
     }
     onRoomFull(callback) {
         this.socket.on('room-full', callback);
     }
-    emitSignal(payload) {
-        this.socket.emit('signal', payload);
-    } 
+    onIncomingCall(callback) {
+        this.socket.on('incoming-call', callback);
+    }
+    onCallResponse(callback) {
+        this.socket.on('call-response', callback);
+    }
     onPeerLeft(callback) {
         this.socket.on('peer-left', callback);
     }

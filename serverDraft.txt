@@ -1,4 +1,4 @@
-// server.js
+
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
@@ -15,8 +15,17 @@ const io = new Server(server, {
 });
 
 app.use(cors())
+app.use(express.json());
 const port = 8000;
-const rooms =[];
+const serverRooms =[];
+const clients = [];
+
+// clients=[{
+//   socketId : 4fge45,
+//   uName : "ahsan",
+//   available : true
+// }]
+
 // Rooms array example Object
 // [
 //     {
@@ -41,9 +50,27 @@ const rooms =[];
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
+  socket.on('join-server',(data)=>{
+    const {userName} = data;
+    if(userName){
+      const user = {
+      socketId : socket.id,
+      uName : userName,
+      available : true
+      }
+      clients.push(user)
+      socket.to(socket.id).emit("ack-join-server",user);
+    }
+  })
+
+
+
+
+
+
   socket.on('join', (data) => {
     const {userName, roomId} = data;
-    let roomExists = rooms.find(room => room.roomId === roomId)
+    let roomExists = serverRooms.find(room => room.roomId === roomId)
 
     if(roomExists) {
        if(!roomExists.peers.peer1) {
@@ -57,22 +84,22 @@ io.on('connection', (socket) => {
         }
     }
     else if(!roomExists) {
-        rooms.push({
+        serverRooms.push({
             roomId: roomId,
             peers: {
                 peer1: { userName, socketId: socket.id },
-                peer2: null
+                peer2: null,
             }
         });
     }
-    console.log(`Updated rooms: ${JSON.stringify(rooms)}`);
+    console.log(`Updated serverRooms: ${JSON.stringify(serverRooms)}`);
 
     socket.join(roomId);
     
-    const clients = io.sockets.adapter.rooms.get(roomId);
+    const clients = io.sockets.adapter.serverRooms.get(roomId);
     if (clients.size === 2) {
       // Notify both clients they can start signaling
-      const roomInfo = rooms.find(room => room.roomId === roomId);
+      const roomInfo = serverRooms.find(room => room.roomId === roomId);
       if (roomInfo) {
       io.to(roomId).emit('ready' , roomInfo.peers);
       }
@@ -96,8 +123,8 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
 
-    for (let i = 0; i < rooms.length; i++) {
-        const room = rooms[i];
+    for (let i = 0; i < serverRooms.length; i++) {
+        const room = serverRooms[i];
 
         if (room.peers.peer1?.socketId === socket.id) {
         room.peers.peer1 = null;
@@ -109,10 +136,10 @@ io.on('connection', (socket) => {
 
         //removes room if empty
         if (!room.peers.peer1 && !room.peers.peer2) {
-        rooms.splice(i, 1);
+        serverRooms.splice(i, 1);
         i--; // adjust index after removal
         }
-        console.log(`Updated rooms: ${JSON.stringify(rooms)}`);
+        console.log(`Updated serverRooms: ${JSON.stringify(serverRooms)}`);
     }
     });
 
@@ -120,9 +147,57 @@ io.on('connection', (socket) => {
 
 
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is online' });
+app.post('/get-available-users', (req, res) => {
+  const {User} = req.body;
+try {
+    if(clients){
+    const available_clients = clients
+    .filter(client=> client.available && `${client.uName}#${client.id}` !== User )
+    .map(client => `${client.uName}#${client.id}`)
+    res.status(200).json(available_clients)  
+  }
+  else{
+    res.status(404).send("No Clients Found")
+  }
+} catch (error) {
+    console.error("Error at getUser->",error)
+    res.status(500).json({msg: "Unable to get User"})
+}
+
+    
 });
+
+
+app.get('/get-rooms', (req, res) => {
+  try {
+    if(serverRooms) {
+      const roomIds = serverRooms.map(room =>room.roomId);
+      res.status(200).json(roomIds)
+    }
+    else res.status(404).send("No Rooms Found")    
+  } catch (error) {
+    console.error("Error at getRooms->",error)
+    res.status(500).json({msg: "Unable to get Rooms"})
+  }
+})
+
+app.post('/join-server', (req, res) => {
+  const {userName} = req.body;
+  try {
+    if(userName){
+      clientRandId = Date.now();
+      clients.push({
+        id : clientRandId,
+        uName : userName,
+        available : true
+      })
+      res.status(200).json({user: `${userName}#${clientRandId}`})
+    }
+  } catch (error) {
+    console.error("Error at JoinServer->",error)
+    res.status(500).json({msg: "Unable to Join Server"})
+  }
+})
 
 server.listen(port, () => {
   console.log(`Signaling server listening on http://localhost:${port}`);

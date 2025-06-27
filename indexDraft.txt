@@ -1,0 +1,142 @@
+let flagCreateRoomForm = false;
+let flagJoinRoomForm = false;
+let flagCallUserForm = false;
+let User = null;
+let selectedRoom = null;
+let selectedUser = null;
+
+async function handleJoin(e) {
+  e.preventDefault(); // Prevent page refresh
+
+  const userName = document.getElementById("uName").value.trim();
+
+  try {
+    const res = await fetch('http://localhost:8000/join-server', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userName })
+    });
+
+    if (res.status === 200) {
+      const { user } = await res.json();
+      User = user;
+      document.getElementById("loginForm").style.display = 'none';
+      document.getElementById("postJoinSection").style.display = 'block';
+      document.getElementById("displayUsername").textContent = User;
+    } else {
+      alert("Server responded with status: " + res.status);
+    }
+  } catch (error) {
+    console.error("Error connecting to server:", error);
+    alert("Server not available! Please try again later.");
+  }
+}
+
+function toggleCreateRoomForm(){
+    flagCreateRoomForm = !flagCreateRoomForm;
+
+    if(flagCreateRoomForm){
+    document.getElementById("createRoomForm").style.display = 'block';
+    }
+    else{
+        document.getElementById("createRoomForm").style.display = 'none';
+    }
+}
+
+async function toggleRoomList(){
+    flagJoinRoomForm = !flagJoinRoomForm;
+    if(flagJoinRoomForm){
+        const res = await fetch("http://localhost:8000/get-rooms",{
+            method: 'GET',
+            headers: {
+            'Content-Type': 'application/json'
+            }
+        })
+        if(res.status === 200){
+            const rooms = await res.json();
+            const select = document.getElementById('availableUsers');
+            appendList(rooms,select);
+        }
+        document.getElementById("joinRoomForm").style.display = 'block';
+    }
+    else{
+        document.getElementById("joinRoomForm").style.display = 'none';
+    }
+}
+
+async function toggleUserList() {
+    flagCallUserForm = !flagCallUserForm;
+    if(flagCallUserForm){
+        const res = await fetch("http://localhost:8000/get-available-users",{
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ User })
+        })
+        if(res.status === 200){
+            const users = await res.json();
+            const select = document.getElementById('availableUsers');
+            appendList(users,select);
+        } 
+        document.getElementById("callUserForm").style.display = 'block';
+    }
+    else{
+        document.getElementById("callUserForm").style.display = 'none';
+    }
+}
+
+
+function appendList(array , selectdomEL){
+    selectdomEL.innerHTML = "";
+    array.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        selectdomEL.appendChild(option);
+    });
+}
+
+
+document.getElementById("availableRooms").addEventListener("change",()=>{
+    selectedRoom = document.getElementById("availableRooms").value;
+});
+
+document.getElementById("availableUsers").addEventListener("change",()=>{
+    selectedUser = document.getElementById("availableUsers").value;
+});
+
+document.getElementById("createRoombtn").addEventListener("click",()=>{
+    console.log("createRoom")
+// redirect to conferenceview.html
+});
+
+document.getElementById("joinRoombtn").addEventListener("click",()=>{
+    console.log("joinRoom")
+// redirect to conferenceview.html
+    if (selectedRoom && User) {
+    const encodedRoom = encodeURIComponent(selectedRoom);
+    const encodedUser = encodeURIComponent(User);
+    window.location.href = `conference.html?room=${encodedRoom}&user=${encodedUser}`;
+    }
+    else{
+        alert("Please Select a Room, Before Joining!")
+    }
+});
+
+document.getElementById("startCallbtn").addEventListener("click",()=>{
+    console.log("callUser")
+// redirect to callView.html P2P
+    if (selectedUser && User) {
+    const callee = encodeURIComponent(selectedUser);
+    const caller = encodeURIComponent(User);
+    window.location.href = `callView.html?callee=${callee}&caller=${caller}`;
+    }
+    else{
+        alert("Please Select a Callee, Before Calling!")
+    }
+});
+
+

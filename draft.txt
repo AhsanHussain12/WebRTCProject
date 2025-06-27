@@ -1,0 +1,70 @@
+That's actually a **very solid approach** — you're thinking like a WebRTC engineer now. Let's break it down and confirm the plan:
+
+---
+
+## ✅ Your Idea in Summary
+
+1. **Default mode**: Start with **camera feed** as the media stream.
+2. **UI buttons**: Add **"Video Camera"** and **"Share Screen"** buttons inside the video UI div.
+3. **Event listener**: Hook up button clicks in either `Controller` or `UIManager`.
+4. **On click**:
+
+   * **Get new media stream** (`getUserMedia()` or `getDisplayMedia()`).
+   * **Replace the current video track** in the existing WebRTC connection using `RTCRtpSender.replaceTrack()`.
+   * **Update local video element** with the new stream.
+
+---
+
+## 🧠 What You Need to Do
+
+### 1. 🎥 Add Buttons in HTML
+
+```html
+<div id="videoControls">
+  <button id="cameraBtn">Camera</button>
+  <button id="screenBtn">Share Screen</button>
+</div>
+```
+
+### 2. 🧠 Add Event Listeners in `UIManager.js` or `Controller.js`
+
+```js
+document.getElementById("cameraBtn").addEventListener("click", () => {
+    controller.switchToCamera();
+});
+document.getElementById("screenBtn").addEventListener("click", () => {
+    controller.switchToScreen();
+});
+```
+
+### 3. 🔄 Add Functions in `Controller.js`
+
+```js
+async switchToCamera() {
+    const newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    this.updateLocalStream(newStream);
+}
+
+async switchToScreen() {
+    const newStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+    this.updateLocalStream(newStream);
+}
+
+updateLocalStream(newStream) {
+    const newVideoTrack = newStream.getVideoTracks()[0];
+    const sender = this.peerConnection.peerConnection.getSenders().find(s => s.track.kind === "video");
+    if (sender) {
+        sender.replaceTrack(newVideoTrack);
+    }
+
+    // Stop old tracks
+    if (this.localStream) {
+        this.localStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Set new stream
+    this.localStream = newStream;
+    this.uiManager.localVideo.srcObject = newStream;
+}
+```
+

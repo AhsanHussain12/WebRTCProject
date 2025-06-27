@@ -1,26 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./style/styles.css" />
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="./style/index.css" />
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <title>WebRTC Demo</title>
 </head>
 <body>
   <h1>WEBRTC Application Demonstration</h1>
 
-  <form class="login-form" onsubmit="handleJoin(event)">
+  <!-- Join Server Section -->
+  <section id="loginSection" style="display: block;">
+  <form id="loginForm">
     <input type="text" id="uName" placeholder="Enter UserName" required />
-    <input type="text" id="roomId" placeholder="Enter Room ID" required />
-      <label for="modeSelect">Select Mode:</label>
-      <select id="modeSelect">
-        <option value="video_audio" selected>Video + Audio</option>
-        <option value="audio_only">Audio Only</option>
-        <option value="screen_share">Screen Sharing</option>
-      </select>
-    <button id="joinRoom" type="submit">Join Room</button>
+    <button type="submit" id="joinBtn">Join Server</button>
   </form>
+  </section>
+  
+ <!-- Post Join Section -->
+  <section id="postJoinSection" style="display: none;">
+      <div id="postJoin" >
+    <h2>Welcome, <span id="displayUsername"></span></h2>
 
-  <script src="./js/index.js"></script>
+    <!-- Create Room -->
+    <div id="createRoomSection">
+      <button id="createRoomBtn">Create a Custom Room</button>
+      <div id="createRoomForm" style="display: none;">
+        <input type="text" id="newRoomId" placeholder="Enter Room ID" />
+        <button id="submitRoomFormBtn" >create</button>
+      </div>
+    </div>
+
+    <!-- Join Room -->
+    <div id="joinRoomSection">
+      <button id="joinRoomBtn">Join Room</button>
+      <div id="joinRoomForm" style="display: none;">
+        <select id="availableRooms"></select>
+        <button id="joinRoombtn">Join</button>
+      </div>
+    </div>
+
+    <!-- Initiate Call -->
+    <div id="callUserSection">
+      <button id="callUserBtn"">Initiate a Call</button>
+      <div id="callUserForm" style="display: none;">
+        <select id="availableUsers">
+        </select>
+        <button id="startCallbtn" >Call</button>
+      </div>
+    </div>
+  </div>
+  </section>
+
+    <!-- Conference View -->
+  <section id="conferenceSection" style="display: none;">
+    <video id="localVideo" autoplay muted></video>
+    <!-- conference controls -->
+  </section>
+
+  <!-- P2P Call View -->
+  <section id="callSection" style="display: none;">
+    <div class="video-container">
+      <h1 id="localUserP2P">My Video</h1>
+      <video id="localVideoP2P" autoplay muted></video>
+    </div>
+    <div class="video-container">
+      <h1 id="remoteUserP2P"">Waiting for Other User...</h1>
+      <video id="remoteVideoP2P" autoplay></video>
+    </div>
+  </section>
+
+    <!-- call controls -->
+  </section>
+
+
+
+  <script type="module" src="./js/index.js"></script>
 </body>
 </html>
