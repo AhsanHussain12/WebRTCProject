@@ -10,7 +10,6 @@ export class WebRTCConnection{
         console.log("setupListners called")
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log('ICE candidate:', event.candidate);
                 this.onIceCandidate(event.candidate);
             }
         }
@@ -54,6 +53,7 @@ export class WebRTCConnection{
             this.peerConnection.close();
             this.peerConnection = null;
         }
+        return null;
         // clearing the localtracks will cause problem in reconnecting as media is captured and passed in controller constructor , hence not clearing the tracks doesnt pose the need to get media again , until completely resets
         // if (localStream) {
         //     localStream.getTracks().forEach(track => track.stop());

@@ -5,21 +5,22 @@ export class Controller {
     constructor(uiManager, serverUrl){
         this.uiManager = uiManager;
         this.socketManager = new SocketManager(serverUrl, {
-             p2psignal: this.onP2PSignalCallback.bind(this),
+            p2psignal: this.onP2PSignalCallback.bind(this),
             // peerLeft: this.onPeerleftCallback.bind(this),
             // roomFull: this.onRoomFullCallback.bind(this)
             joinServerACK: this.onJoinServerACKCallback.bind(this),
             joinRoomACK: this.onJoinRoomACKCallback.bind(this),
             incomingCall: this.onIncomingCallCallback.bind(this),
-            callResponse: this.onCallResponseCallback.bind(this)
-
+            callResponse: this.onCallResponseCallback.bind(this),
+            peerleftCall :this.onPeerleftCallCallback.bind(this)
 
             
         });
         this.clientInfo = null;
         this.P2PpeerId = null;
         this.localStream = null;
-        this.peerConnection = null;
+        this.webRTCConnection = null;
+        this.localStream = null;
 
     }
 
@@ -43,26 +44,34 @@ export class Controller {
     the callee socket id as parameter
     */
     emitCallUser(calleeSocketId){
-        this.P2PpeerId = calleeSocketId;
+        // this.P2PpeerId = calleeSocketId;
         this.socketManager.emitCallSignal({
-            callerName: this.clientInfo.uName,
+            caller: this.clientInfo,
             from : this.clientInfo.socketId,
             to : calleeSocketId
         })
     }
     
-    // client as the callee
+    /* 
+    client as the callee recieves the incoming-call signal
+    toggles the view and sets Local and remote user heading conditionally
+    */
     onIncomingCallCallback(data){
-        const requestStatus = confirm(`${data.callerName} is calling. Accept?`);
+        console.log(JSON.stringify(data));
+        const requestStatus = confirm(`${data.caller.uName} is calling. Accept?`);
         if(requestStatus){
             this.P2PpeerId = data.from; // caller
             this.initWebRTC(false);
+            this.uiManager.showPostJoinSection(false);
+            this.uiManager.showP2PCallSection(true);
+            this.uiManager.setLocalUserHeading(this.clientInfo.uName);
+            this.uiManager.setRemoteUserHeading(data.caller.uName? data.caller.uName : null);
             // start the webrtc connection
         }
         this.socketManager.emitCallResponse({
             to: data.from,
             status: requestStatus,
-            callee: this.clientInfo
+            from: this.clientInfo.socketId
         }
         );
     }
@@ -77,10 +86,9 @@ export class Controller {
     */
     onCallResponseCallback(data){
         if(data.status){
-            alert("Call Accepted");
-            this.P2PpeerId = data.to; // callee
+            this.P2PpeerId = data.from; //assigns callee socket id as peer on successfull handshake
             this.initWebRTC(true);
-            // initiate the webrtc connection
+            this.uiManager.setRemoteUserHeading(data.peer ? data.peer.uName : null);
         }
         else{
             this.P2PpeerId = null;
@@ -89,8 +97,6 @@ export class Controller {
             this.uiManager.showP2PCallSection(false);
         }
     }
-
-
 
     /* 
     this function recieves the ACK from server and updates the UI by toggling the
@@ -114,6 +120,30 @@ export class Controller {
        this.uiManager.showConferenceView(true);
     }
 
+    async onP2PSignalCallback(data){
+
+        if(data.signalData.type === 'offer'){
+            console.log("📨 Received Offer", data.signalData);
+            // client as a callee recieves an offer form the caller
+            // set remote description and create answer , then emit answer
+            await this.webRTCConnection.RTCsetRemoteDescription(new RTCSessionDescription(data.signalData));
+            const answer = await this.webRTCConnection.RTCcreateAnswer();
+            this.socketManager.emitP2PSignal({
+                to : this.P2PpeerId,
+                signalData : answer
+            })
+            console.log('offer recv and Answer Sent', answer)
+        }
+        else if(data.signalData.type === 'answer'){
+            console.log('Answer recv', data);
+            await this.webRTCConnection.RTCsetRemoteDescription(new RTCSessionDescription(data.signalData));
+        }
+        else if(data.signalData.candidate){
+            await this.webRTCConnection.RTCaddIceCandidate(data.signalData);
+        }    
+    }
+
+
     toggleRoomList(){
         const flag = this.uiManager.showRoomList()
         if(flag){
@@ -130,11 +160,14 @@ export class Controller {
     /*
     emits call request to server
     hides the postlogin option and shows the P2P view
+    and sets the localUser heading
     */ 
     startP2PCall(calleeSocketId){
+        console.log("Caller",this.clientInfo.socketId,"Callee",calleeSocketId)
         this.emitCallUser(calleeSocketId)
         this.uiManager.showPostJoinSection(false);
         this.uiManager.showP2PCallSection(true);
+        this.uiManager.setLocalUserHeading(this.clientInfo.uName);
     }
 
 
@@ -197,40 +230,30 @@ export class Controller {
     //     window.location.href = "index.html";
     // }
 
-    async onP2PSignalCallback(data) {
-        console.log('Signal received', data);
-        if(data.signalData.type === 'offer'){
-            await this.peerConnection.RTCsetRemoteDescription(new RTCSessionDescription(data.signalData));
-            const answer = await this.peerConnection.RTCcreateAnswer()
-            this.socketManager.emitSignal({
-                socketId: this.P2PpeerId,
-                signalData : answer  
-            })
-            console.log('offer sent', answer)
+
+
+    async onPeerleftCallCallback(data) {
+        if(this.webRTCConnection) {
+        console.log('Peer disconnected' , data.from);
+        this.webRTCConnection = this.webRTCConnection.RTCcloseConnection();
         }
-        else if(data.signalData.type === 'answer'){
-            console.log('Answer sent', data);
-            await this.peerConnection.RTCsetRemoteDescription(new RTCSessionDescription(data.signalData));
-        }
-        else if(data.signalData.candidate){
-            await this.peerConnection.RTCaddIceCandidate(data.signalData);
-        }
+        alert("Peer Left Call !")
+        this.uiManager.clearRemoteVideoElP2P();
+
+        this.uiManager.clearLocalStream(this.localStream);
+        this.localStream = null;
+
+        this.uiManager.setRemoteUserHeading(null);
+        this.uiManager.showPostJoinSection(true);
+        this.uiManager.showP2PCallSection(false);
+        
+        this.P2PpeerId = null;
         
     }
 
-    // async onPeerleftCallback(data) {
-    //     if(this.peerConnection) {
-    //     console.log('Peer disconnected' , data.socketId);
-    //     this.peerConnection.RTCcloseConnection();
-    //     }
-    //     this.uiManager.clearRemoteVideoEl();
-    //     this.uiManager.resetRemotePeerInfo(data.socketId);
-    //     //window.location.href = "index.html";
-    // }
-
     async onIceCandidateCallback(candidate){
         this.socketManager.emitP2PSignal({
-            socketId: this.P2PpeerId,
+            to : this.P2PpeerId,
             signalData : candidate
         })
     }
@@ -240,7 +263,7 @@ export class Controller {
         console.log("🛰️ initWebRTC called");
 
         // 1. Create new peer connection with STUN server and callback bindings
-        this.peerConnection = new WebRTCConnection(
+        this.webRTCConnection = new WebRTCConnection(
             {
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
             },
@@ -250,35 +273,28 @@ export class Controller {
 
         // 2. Add local media tracks to the connection
         if (!this.localStream) {
-            console.warn("⚠️ localStream not found. Cannot add tracks.");
-            return;
+            this.localStream = await this.uiManager.getMediaStream();
         }
 
-        this.peerConnection.RTCaddTrack(this.localStream);
-        console.log("✅ Local stream tracks added to peer connection");
+        this.webRTCConnection.RTCaddTrack(this.localStream);
+        console.log(" Local stream tracks added to peer connection");
 
         // 3. If caller, create and send offer
         if (isCaller) {
             try {
-                const offer = await this.peerConnection.RTCcreateOffer();
+                const offer = await this.webRTCConnection.RTCcreateOffer();
                 this.socketManager.emitP2PSignal({
-                    socketId: this.P2PpeerId, 
+                    to : this.P2PpeerId, 
                     signalData: offer
                 });
-                console.log("📡 SDP offer created and sent to peer:", this.p2pPeerId);
+                console.log(" SDP offer created and sent to peer:", this.P2PpeerId);
             } catch (err) {
-                console.error("❌ Failed to create/send offer:", err);
+                console.error(" Failed to create/send offer:", err);
             }
         } else {
-            console.log("👂 Waiting for SDP offer from caller...");
+            console.log(" Waiting for SDP offer from caller...");
         }
 
-
-
-        // if (remotePeer?.userName) {
-        //     this.uiManager.setRemotePeerHeading(remotePeer.userName);
-        //     console.log("🧑‍💻 Remote peer heading set to:", remotePeer.userName);
-        // }
     }
 
 

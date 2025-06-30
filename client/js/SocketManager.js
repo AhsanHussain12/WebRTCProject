@@ -20,12 +20,12 @@ export class SocketManager{
 
 
         this.onP2PSignal(handlers.p2psignal);
-        this.onPeerLeft(handlers.peerLeft);
         this.onRoomFull(handlers.roomFull);
         this.onJoinServerACK(handlers.joinServerACK);
         this.onJoinRoomACK(handlers.joinRoomACK);
         this.onIncomingCall(handlers.incomingCall);
         this.onCallResponse(handlers.callResponse);
+        this.onPeerLeftCall(handlers.peerleftCall)
 
     }
 
@@ -61,7 +61,7 @@ export class SocketManager{
     }
     onP2PSignal(callback) {
         console.log('onSignal called',callback);
-        this.socket.on('signal', callback);
+        this.socket.on('p2p-signal', callback);
     }
     onRoomFull(callback) {
         this.socket.on('room-full', callback);
@@ -72,7 +72,7 @@ export class SocketManager{
     onCallResponse(callback) {
         this.socket.on('call-response', callback);
     }
-    onPeerLeft(callback) {
-        this.socket.on('peer-left', callback);
+    onPeerLeftCall(callback) {
+        this.socket.on('peer-left-call', callback);
     }
 }

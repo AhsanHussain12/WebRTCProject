@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="./style/index.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <title>WebRTC Demo</title>
 </head>
@@ -59,20 +60,27 @@
     <!-- conference controls -->
   </section>
 
-  <!-- P2P Call View -->
-  <section id="callSection" style="display: none;">
-    <div class="video-container">
-      <h1 id="localUserP2P">My Video</h1>
-      <video id="localVideoP2P" autoplay muted></video>
+<section id="callSection" style="display: none;">
+  <div class="video-container">
+    <h1 id="localUserP2P">My Video</h1>
+    <video id="localVideoP2P" autoplay muted></video>
+    <!-- 🔧 Correct: Add controls here for your own stream -->
+    <div class="controls">
+      <button id="switchToCameraBtn" title="Switch to Camera">
+        <i class="fas fa-video"></i>
+      </button>
+      <button id="switchToScreenBtn" title="Share Screen">
+        <i class="fas fa-desktop"></i>
+      </button>
     </div>
-    <div class="video-container">
-      <h1 id="remoteUserP2P"">Waiting for Other User...</h1>
-      <video id="remoteVideoP2P" autoplay></video>
-    </div>
-  </section>
+  </div>
 
-    <!-- call controls -->
-  </section>
+  <div class="video-container">
+    <h1 id="remoteUserP2P">Waiting for Other User...</h1>
+    <video id="remoteVideoP2P" autoplay></video>
+  </div>
+</section>
+
 
 
 

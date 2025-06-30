@@ -25,6 +25,8 @@ const uiManager = new UIManager({
   remoteVideo: document.getElementById("remoteVideo"),
 
   // P2P Call View
+  localP2PuserNameHeading: document.getElementById("localUserP2P"),
+  remoteP2PuserNameHeading: document.getElementById("remoteUserP2P"),
   p2pCallSection: document.getElementById("callSection"),
   localVideoP2P: document.getElementById("localVideoP2P"),
   remoteVideoP2P: document.getElementById("remoteVideoP2P"),

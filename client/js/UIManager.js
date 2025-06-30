@@ -25,6 +25,8 @@ export class UIManager{
         this.remoteVideo = uiElements.remoteVideo;
 
         // P2P Call
+        this.localP2PuserNameHeading = uiElements.localP2PuserNameHeading;
+        this.remoteP2PuserNameHeading = uiElements.remoteP2PuserNameHeading;
         this.p2pCallSection = uiElements.p2pCallSection;
         this.localVideoP2P = uiElements.localVideoP2P;
         this.remoteVideoP2P = uiElements.remoteVideoP2P;
@@ -83,7 +85,6 @@ export class UIManager{
         this.p2pCallSection.style.display = flag ? 'block' : 'none';
     }
 
-
     appendList(type,array){
         console.log(type,array);
         switch(type){
@@ -132,6 +133,77 @@ export class UIManager{
     playRemoteStream(remoteStream){
         this.remoteVideoP2P.srcObject = remoteStream;
     }
+
+    // gets the userMedia stream and assigns to the local video element of P2P or conference
+    async getMediaStream(mode="VA", isConference = false){
+    if (this.localVideo && this.localVideo.srcObject) {
+        const tracks = this.localVideo.srcObject.getTracks();
+        tracks.forEach(track => {  track.stop() });
+        this.localVideo.srcObject = null;
+    }
+        try {
+            let localStream;
+
+            switch(mode){
+                case 'VA': // video+audio      
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                break;
+
+                case 'SS': // screen share
+                               console.warn("[ScreenShare] Requesting display media...");
+                localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                break;
+
+                case 'AO': // audio only
+                localStream = await navigator.mediaDevices.getUserMedia({  audio: true });
+                break;
+            }
+
+            if(isConference){
+
+                if (this.localVideo && localStream) {
+                    this.localVideo.srcObject = localStream;
+                }
+            }
+            else{
+
+                if(this.localVideoP2P && localStream){
+                    this.localVideoP2P.srcObject = localStream;
+                }
+            }
+
+            return localStream;
+        } 
+        catch (error) {
+            console.error("Error accessing media:", error);
+            alert("Media access error: " + error.message);
+            return null;
+        }        
+        
+    }
+
+    setRemoteUserHeading(userName){
+        if(userName) this.remoteP2PuserNameHeading.textContent = userName;
+        else this.remoteP2PuserNameHeading.textContent = `Waiting for Other User...`;
+    }
+
+    setLocalUserHeading(userName){
+        this.localP2PuserNameHeading.textContent = userName;
+    }
+
+    clearRemoteVideoElP2P(){
+        if(this.remoteVideoP2P.srcObject){
+            this.remoteVideoP2P.srcObject.getTracks().forEach(track => track.stop());
+            this.remoteVideoP2P.srcObject = null;
+        }
+    }
+
+    clearLocalStream(localStream){
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+    }
+    
 }
 
 
@@ -168,43 +240,7 @@ export class UIManager{
     //     this.roomIdHeading.textContent = roomId;
     // }
 
-    // async getMediaStream(mode){
 
-    // if (this.localVideo && this.localVideo.srcObject) {
-    //     const tracks = this.localVideo.srcObject.getTracks();
-    //     tracks.forEach(track => {  track.stop() });
-    //     this.localVideo.srcObject = null;
-    // }
-    //     try {
-    //         let localStream;
-
-    //         switch(mode){
-    //             case 'video_audio':        
-    //             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    //             break;
-
-    //             case 'screen_share':
-    //                            console.warn("[ScreenShare] Requesting display media...");
-    //             localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-    //             break;
-
-    //             case 'audio_only':
-    //             localStream = await navigator.mediaDevices.getUserMedia({  audio: true });
-    //             break;
-    //         }
-
-    //         if (this.localVideo && localStream) {
-    //             this.localVideo.srcObject = localStream;
-    //         }
-    //         return localStream;
-    //     } 
-    //     catch (error) {
-    //         console.error("Error accessing media:", error);
-    //         alert("Media access error: " + error.message);
-    //         return null;
-    //     }        
-        
-    // }
 
   
 
